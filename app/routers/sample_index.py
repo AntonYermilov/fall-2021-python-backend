@@ -38,31 +38,38 @@ class SampleIndexResponse(BaseModel):
     total_price: float
 
 
-@router.post('')
-async def sample_index(body: SampleIndexRequest):
-    if body.budget < 0:
-        raise HTTPException(
-            status_code=400, detail='Budget can not be negative'
-        )
-
+def sample_index(request: SampleIndexRequest) -> SampleIndexResponse:
     stocks, index_weights = {
         StockMarketIndex.sp100: fetch_sp100,
         StockMarketIndex.sp500: fetch_sp500,
         StockMarketIndex.nasdaq100: fetch_nasdaq100,
         StockMarketIndex.dowjones: fetch_dowjones
-    }[body.index]()
+    }[request.index]()
 
     weights = {
         SampleIndexStrategy.index_weighed: (lambda _: index_weights),
         SampleIndexStrategy.price_weighed: price_weighing,
         SampleIndexStrategy.inv_price_weighed: inv_price_weighing
-    }[body.strategy](stocks)
+    }[request.strategy](stocks)
 
-    samples = sample(stocks, weights, body.budget)
+    samples = sample(stocks, weights, request.budget)
+    total_price = sum(share.current_price for share in samples)
 
     response = SampleIndexResponse(
         stocks=samples,
-        total_price=sum(share.current_price for share in samples)
+        total_price=total_price
     )
+
+    return response
+
+
+@router.post('')
+async def sample_index_endpoint(request: SampleIndexRequest):
+    if request.budget < 0:
+        raise HTTPException(
+            status_code=400, detail='Budget can not be negative'
+        )
+
+    response = sample_index(request)
 
     return response

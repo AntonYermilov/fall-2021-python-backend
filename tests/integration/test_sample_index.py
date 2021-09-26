@@ -1,59 +1,76 @@
-from fastapi.testclient import TestClient
+import unittest
 
-from app.main import app
-
-client = TestClient(app)
-
-
-def test_negative_budget():
-    response = client.post(
-        url='/sample_index',
-        headers={'Content-Type': 'application/json'},
-        json={'budget': -10000, 'index': 'sp100', 'strategy': 'index-weighed'}
-    )
-
-    assert response.status_code == 400
+from app.routers.sample_index import SampleIndexRequest, SampleIndexStrategy, StockMarketIndex
+from app.routers.sample_index import sample_index
 
 
-def test_sample_sp100_index_weighed():
-    response = client.post(
-        url='/sample_index',
-        headers={'Content-Type': 'application/json'},
-        json={'budget': 10000, 'index': 'sp100', 'strategy': 'index-weighed'}
-    )
+class TestSampleIndex(unittest.TestCase):
 
-    assert response.status_code == 200
-    assert 9900 <= response.json()['total_price'] <= 10000
+    def test_sample_sp100_index_weighed(self):
+        request = SampleIndexRequest(
+            budget=10000,
+            index=StockMarketIndex.sp100,
+            strategy=SampleIndexStrategy.index_weighed
+        )
+        response = sample_index(request)
 
+        self.assertGreaterEqual(len(response.stocks), 1)
 
-def test_sample_sp500_index_weighed():
-    response = client.post(
-        url='/sample_index',
-        headers={'Content-Type': 'application/json'},
-        json={'budget': 10000, 'index': 'sp100', 'strategy': 'index-weighed'}
-    )
+        min_price = min(share.current_price for share in response.stocks)
+        total_price = sum(share.current_price for share in response.stocks)
 
-    assert response.status_code == 200
-    assert 9900 <= response.json()['total_price'] <= 10000
+        self.assertGreater(total_price + min_price, 10000)
+        self.assertLessEqual(min_price, 100)
+        self.assertLessEqual(abs(total_price - response.total_price), 1e-4)
 
+    def test_sample_sp500_index_weighed(self):
+        request = SampleIndexRequest(
+            budget=10000,
+            index=StockMarketIndex.sp500,
+            strategy=SampleIndexStrategy.index_weighed
+        )
+        response = sample_index(request)
 
-def test_sample_nasdaq100_price_weighed():
-    response = client.post(
-        url='/sample_index',
-        headers={'Content-Type': 'application/json'},
-        json={'budget': 10000, 'index': 'nasdaq100', 'strategy': 'price-weighed'}
-    )
+        self.assertGreaterEqual(len(response.stocks), 1)
 
-    assert response.status_code == 200
-    assert 9900 <= response.json()['total_price'] <= 10000
+        min_price = min(share.current_price for share in response.stocks)
+        total_price = sum(share.current_price for share in response.stocks)
 
+        self.assertGreater(total_price + min_price, 10000)
+        self.assertLessEqual(min_price, 100)
+        self.assertLessEqual(abs(total_price - response.total_price), 1e-4)
 
-def test_sample_dowjones_inv_price_weighed():
-    response = client.post(
-        url='/sample_index',
-        headers={'Content-Type': 'application/json'},
-        json={'budget': 10000, 'index': 'dowjones', 'strategy': 'inv-price-weighed'}
-    )
+    def test_sample_nasdaq100_price_weighed(self):
+        request = SampleIndexRequest(
+            budget=10000,
+            index=StockMarketIndex.nasdaq100,
+            strategy=SampleIndexStrategy.price_weighed
+        )
+        response = sample_index(request)
 
-    assert response.status_code == 200
-    assert 9900 <= response.json()['total_price'] <= 10000
+        self.assertGreaterEqual(len(response.stocks), 1)
+
+        min_price = min(share.current_price for share in response.stocks)
+        total_price = sum(share.current_price for share in response.stocks)
+
+        self.assertGreater(total_price + min_price, 10000)
+        self.assertLessEqual(min_price, 100)
+        self.assertLessEqual(abs(total_price - response.total_price), 1e-4)
+
+    def test_sample_dowjones_inv_price_weighed(self):
+        request = SampleIndexRequest(
+            budget=10000,
+            index=StockMarketIndex.sp100,
+            strategy=SampleIndexStrategy.inv_price_weighed
+        )
+        response = sample_index(request)
+
+        self.assertGreaterEqual(len(response.stocks), 1)
+
+        min_price = min(share.current_price for share in response.stocks)
+        total_price = sum(share.current_price for share in response.stocks)
+
+        self.assertGreater(total_price + min_price, 10000)
+        self.assertLessEqual(min_price, 100)
+        self.assertLessEqual(abs(total_price - response.total_price), 1e-4)
+

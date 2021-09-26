@@ -25,11 +25,13 @@ def fetch_sp100() -> Tuple[List[Share], np.ndarray]:
 
 
 def fetch_sp500() -> Tuple[List[Share], np.ndarray]:
-    return _fetch_index('sp500')
+    stocks, weights = _fetch_index('sp500')
+    return stocks[:500], weights[:500]
 
 
 def fetch_nasdaq100() -> Tuple[List[Share], np.ndarray]:
-    return _fetch_index('nasdaq100')
+    stocks, weights = _fetch_index('nasdaq100')
+    return stocks[:100], weights[:100]
 
 
 def fetch_dowjones() -> Tuple[List[Share], np.ndarray]:
