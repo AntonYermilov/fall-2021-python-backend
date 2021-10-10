@@ -11,3 +11,6 @@
 Запуск тестов: `python3.x -m pytest`
 
 Запуск сервиса: `uvicorn app.main:app --reload`
+
+Планируемая архитектура сервиса представлена ниже:
+![acrhitecture](./architecture.png)
